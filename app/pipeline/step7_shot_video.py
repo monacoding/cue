@@ -40,7 +40,7 @@ def run(
     project_id: str,
     only_shot_id: Optional[str] = None,
     progress_cb: Optional[Callable[[float], None]] = None,
-    model: str = "seedance",
+    model: str = "opensource",
 ) -> List[VideoAsset]:
     assert_gate(project_id)
     if not assembly.ffmpeg_available():

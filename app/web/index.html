@@ -1706,12 +1706,15 @@ const App={
         <span style="opacity:.8">— ${cost.video_step.duration_sec}s × $${cost.video_step.per_sec}/s video + music. Free in mock mode.</span></div>`:""}
       <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <label style="margin:0;font-size:12px">Model</label>
-        <select class="fld" id="vmodel" style="width:auto;min-width:200px">
-          <option value="seedance">Seedance 2.0 (default, ~$0.30/s)</option>
+        <select class="fld" id="vmodel" style="width:auto;min-width:240px">
+          <option value="opensource">Open-source I2V · Wan/LTX (RunPod · 무료)</option>
+          <option value="seedance">Seedance 2.0 (fal, ~$0.30/s)</option>
           <option value="kling">Kling 3.0 (low-cost, ~$0.029/s)</option>
           <option value="veo">Veo 3.1 (high-quality + audio)</option>
         </select>
+        <button class="btn-ghost btn-sm" onclick="App.testVideo()">🔌 Test RunPod video</button>
         <button class="btn-ghost" ${gate.unlocked&&!(this.health&&this.health.ffmpeg===false)?'':'disabled'} onclick="App.genClips()">↻ Generate all clips</button>
+        <span id="vidTest" style="font-size:12px;color:var(--muted)"></span>
         ${vids.length?`<button class="btn-ok" onclick="App.approveClips()">Approve all clips</button>`:""}
       </div>
       ${this.progressBlock("vidProg","Generating clips…")}
@@ -1724,7 +1727,15 @@ const App={
     </div>`;
     if(!isStatic) this.reconnectJob("video","vidProg",()=>this.render_video());
   },
-  videoModel(){return $("#vmodel")?$("#vmodel").value:"seedance";},
+  videoModel(){return $("#vmodel")?$("#vmodel").value:"opensource";},
+  async testVideo(){const el=$("#vidTest");if(el)el.innerHTML='<span class="spin"></span> testing…';
+    try{
+      const d=await api(`/api/providers/video/test`);
+      if(!d.configured){el.innerHTML='⚪ not configured — set RUNPOD_API_KEY + RUNPOD_VIDEO_ENDPOINT (deploy Wan/LTX/SVD worker). 지금은 ffmpeg Ken Burns 무료 베이스라인으로 동작.';return;}
+      if(d.real_call_ok){el.innerHTML=`<span style="color:var(--ok)">✓ connected (${d.endpoint_kind}) — got ${d.video_bytes} bytes</span>`;}
+      else{el.innerHTML=`<span style="color:var(--bad)">✗ failed: ${esc(d.error||'')}</span>`;}
+    }catch(e){if(el)el.textContent='error: '+e;}
+  },
   async genClips(){await withBtn(event,async()=>{
     const {job_id}=await api(`/api/projects/${this.pid}/video?model=${this.videoModel()}`,"POST");
     await this.pollJob(job_id,(p)=>this.setProgress("vidProg",p));

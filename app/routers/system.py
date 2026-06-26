@@ -36,6 +36,16 @@ def llm_cli_test():
     return ClaudeCLIProvider().diagnose()
 
 
+@router.get("/api/providers/video/test")
+def video_connectivity_test():
+    """Self-test the RunPod open-source image-to-video worker: attempts a real generation
+    and reports success or the failure reason. Lets the user verify their I2V endpoint
+    (Wan 2.2 / LTX-Video / SVD) the moment they deploy it."""
+    from app.providers.video_runpod import RunPodVideoProvider
+
+    return RunPodVideoProvider().diagnose()
+
+
 @router.get("/api/health")
 def health():
     return {

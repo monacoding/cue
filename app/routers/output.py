@@ -34,7 +34,7 @@ def video_gate(project_id: str):
 
 
 @router.post("/api/projects/{project_id}/video")
-def gen_video(project_id: str, shot_id: str = "", model: str = "seedance"):
+def gen_video(project_id: str, shot_id: str = "", model: str = "opensource"):
     """Submit async clip generation (CLAUDE.md §6 — video is minutes-long → job queue).
 
     Gate + ffmpeg checks run synchronously (fast) so the caller gets 409/503 immediately;

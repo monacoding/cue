@@ -35,7 +35,8 @@
 - **Phase 1 (MVP) — 완료**: 1~6 + 8단계(합성). `static_image`.
 - **Phase 2 — 완료**: 7단계 image-to-video(Seedance, 키 없으면 ffmpeg Ken Burns) + 컷별 텍스트 번인 + 8단계 xfade 조립 + 음악 베드 믹스 + 9단계 플랫폼 인코딩. `ugc_video`/`cinematic_video`.
   - 영상 생성은 **비동기 잡 큐**(`core/jobs.py`) + 폴링(`GET /api/jobs/{id}`) + 진행률 UI. 컷별 재생성 지원.
-- **Phase 3 — 대부분**: 이미지 provider 자동 fallback, 멀티 플랫폼 export(9:16/1:1/4:5), **영상 모델 라우팅(Seedance/Kling/Veo)·음악 모델 라우팅(ElevenLabs/MiniMax)**. (업스케일 Lanczos 베이스라인+Topaz 라우팅, 비트싱크 구현 — 전 항목 완성)
+- **Phase 3 — 대부분**: 이미지 provider 자동 fallback, 멀티 플랫폼 export(9:16/1:1/4:5), **영상 모델 라우팅·음악 모델 라우팅(ElevenLabs/MiniMax)**. (업스케일 Lanczos 베이스라인+Topaz 라우팅, 비트싱크 구현 — 전 항목 완성)
+  - **영상(오픈소스 우선)**: 기본 라우트 `opensource` = RunPod 호스팅 오픈소스 I2V(Wan 2.2/LTX/SVD, `video_runpod.py`, 이미지 Qwen-RunPod 패턴 미러). `RUNPOD_VIDEO_ENDPOINT` 없으면 ffmpeg Ken Burns 무료 폴백 → 키 없이도 실클립 생성. 대안: Seedance/Kling/Veo(fal, 유료). 연결 자가진단 `GET /api/providers/video/test`.
 - **재현성(Generation Recipe, ComfyUI 차용)**: 모든 생성/편집 이미지가 `GenerationRecipe`(seed·prompt·model·background·strategy·provider)를 갖는다. 앱이 seed를 소유(생성 시 항상 기록)해 실제 provider도 재현 가능. recipe는 에셋/상태에 영속될 뿐 아니라 **PNG tEXt 메타데이터에 임베드**(`core/recipe.py`)되어, 다운로드한 이미지가 출처를 갖고 다니고 다시 추출 가능. API: `GET …/assets/{shot}/recipe`, `POST …/reproduce`(동일 seed→동일 이미지), `POST …/remix`(한 필드만 바꾸고 나머지 잠금), `POST …/recipe/extract`(드롭한 PNG에서 recipe 복원). UI: 각 이미지의 🧬 Recipe 모달(seed 잠금/🎲 랜덤 + Reproduce/Remix). 노드그래프 실행엔진은 의도적으로 차용하지 않음(선형 파이프라인 철학 유지). `pipeline/reproduce.py`, `tests/test_recipe.py`.
 - **광고 지능**: 가중 루브릭 컨셉 평가(결정론적 채점) → 선택 컨셉이 콘티 훅/서사 시드 → 최종 합성 카피까지 연결.
 - **전문가 패널 평가**(`app/eval/expert_panel.py`): 10인 광고 전문가 페르소나가 생성 광고를 채점 → 권장 광고비(예산 tier) 책정. `scripts/sim_100.py`로 100 제품 시뮬레이션·집계해 카피 로직의 체계적 약점을 찾고 개선(평가 주도 개선: 패널 평균 65.7→75.3).

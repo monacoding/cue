@@ -983,17 +983,44 @@ def test_env_line_parser_strips_quotes_and_export():
 
 
 def test_video_provider_routing():
-    """get_video_provider routes seedance/kling/veo, defaults to seedance (§4.7/§9)."""
+    """get_video_provider routes opensource/seedance/kling/veo, defaulting to the
+    open-source RunPod I2V (free/open path first, §4.7/§9)."""
     from app.providers.registry import VIDEO_MODELS, get_video_provider
     from app.providers.video_kling import KlingProvider
+    from app.providers.video_runpod import RunPodVideoProvider
     from app.providers.video_seedance import SeedanceProvider
     from app.providers.video_veo import VeoProvider
 
-    assert set(VIDEO_MODELS) == {"seedance", "kling", "veo"}
+    assert set(VIDEO_MODELS) == {"opensource", "seedance", "kling", "veo"}
+    assert isinstance(get_video_provider("opensource"), RunPodVideoProvider)
     assert isinstance(get_video_provider("seedance"), SeedanceProvider)
     assert isinstance(get_video_provider("kling"), KlingProvider)
     assert isinstance(get_video_provider("veo"), VeoProvider)
-    assert isinstance(get_video_provider("unknown"), SeedanceProvider)  # safe default
+    assert isinstance(get_video_provider("unknown"), RunPodVideoProvider)  # open-source default
+    assert isinstance(get_video_provider(), RunPodVideoProvider)
+
+
+def test_opensource_video_offline_fallback(monkeypatch):
+    """With no RunPod video endpoint the open-source provider falls back to the ffmpeg
+    Ken Burns baseline — video still works for free/offline."""
+    import io
+
+    from PIL import Image
+
+    from app.config import settings
+    from app.core import assembly
+    from app.providers.video_runpod import RunPodVideoProvider
+
+    monkeypatch.setattr(settings, "runpod_video_endpoint", "")
+    prov = RunPodVideoProvider()
+    assert prov.is_real is False
+    if not assembly.ffmpeg_available():
+        pytest.skip("ffmpeg not installed")
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 112), (180, 60, 40)).save(buf, format="PNG")
+    res = prov.image_to_video(buf.getvalue(), "ramen steam rising", duration_sec=3, aspect_ratio="9:16")
+    assert res.video_bytes and len(res.video_bytes) > 0
+    assert "kenburns" in res.provider
 
 
 def test_audio_provider_routing():

@@ -67,6 +67,13 @@ class Settings:
     runpod_qwen_input: str = os.getenv("RUNPOD_QWEN_INPUT", "")
     # appended to every Qwen prompt — the LoRA trigger word / style phrase (e.g. "myeongdong_street").
     runpod_qwen_style: str = os.getenv("RUNPOD_QWEN_STYLE", "")
+    # RunPod-hosted open-source image-to-video model (Wan 2.2 / LTX-Video / SVD …) — the
+    # free/open video path. Serverless endpoint id or a full custom-pod URL. Empty → ffmpeg
+    # Ken Burns baseline (still works offline, just no generative motion).
+    runpod_video_endpoint: str = os.getenv("RUNPOD_VIDEO_ENDPOINT", "")
+    # extra/override input fields merged into every video request (JSON), e.g.
+    # {"num_frames":81,"fps":16,"guidance_scale":5,"negative_prompt":"blurry"} — adapts to any worker.
+    runpod_video_input: str = os.getenv("RUNPOD_VIDEO_INPUT", "")
     # selectable background scenes (your trained LoRA captions), JSON list of {key,label,prompt}.
     # Empty → built-in Myeongdong presets. Per-image background picker uses these.
     image_backgrounds: str = os.getenv("IMAGE_BACKGROUNDS", "")

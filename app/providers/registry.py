@@ -24,6 +24,7 @@ from app.providers.image_qwen_runpod import QwenRunPodProvider
 from app.providers.llm_claude import ClaudeProvider
 from app.providers.llm_claude_cli import ClaudeCLIProvider
 from app.providers.video_kling import KlingProvider
+from app.providers.video_runpod import RunPodVideoProvider
 from app.providers.video_seedance import SeedanceProvider
 from app.providers.video_veo import VeoProvider
 
@@ -119,19 +120,22 @@ def image_models_status() -> List[dict]:
     return out
 
 
-# video model routing (CLAUDE.md §4.7/§9 Phase 3) — seedance default,
-# kling (low-cost), veo (high-quality + audio). Swap a string to switch.
+# video model routing (CLAUDE.md §4.7/§9) — open-source first: a RunPod-hosted I2V model
+# (Wan 2.2 / LTX-Video / SVD) is the default, free/open path (ffmpeg Ken Burns until an
+# endpoint is deployed). seedance/kling/veo are the proprietary fal alternatives.
 _VIDEO_PROVIDERS = {
+    "opensource": RunPodVideoProvider,
     "seedance": SeedanceProvider,
     "kling": KlingProvider,
     "veo": VeoProvider,
 }
 VIDEO_MODELS = tuple(_VIDEO_PROVIDERS.keys())
+DEFAULT_VIDEO_MODEL = "opensource"
 
 
-@lru_cache(maxsize=4)
-def get_video_provider(model: str = "seedance") -> VideoProvider:
-    cls = _VIDEO_PROVIDERS.get((model or "seedance").lower(), SeedanceProvider)
+@lru_cache(maxsize=8)
+def get_video_provider(model: str = DEFAULT_VIDEO_MODEL) -> VideoProvider:
+    cls = _VIDEO_PROVIDERS.get((model or DEFAULT_VIDEO_MODEL).lower(), RunPodVideoProvider)
     return cls()
 
 
