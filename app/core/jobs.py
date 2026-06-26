@@ -24,10 +24,11 @@ class Job:
     id: str
     kind: str
     project_id: str
-    status: str = "queued"           # queued | running | done | error
+    status: str = "queued"           # queued | running | done | error | cancelled
     progress: float = 0.0
     result: Any = None
     error: Optional[str] = None
+    cancel_requested: bool = False   # cooperative interrupt (ComfyUI-style) — checked by long loops
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -75,6 +76,11 @@ class JobQueue:
         return job
 
     def _run(self, job: Job, fn: Callable[[Job], Any], key: Optional[Tuple[str, str]]) -> None:
+        if job.cancel_requested:                      # cancelled before a worker picked it up
+            job.status = "cancelled"
+            _log.info("job %s [%s] cancelled before start", job.id, job.kind)
+            self._finalize(job, key)
+            return
         job.status = "running"
         job.updated_at = datetime.now(timezone.utc).isoformat()
         _log.info("job %s [%s] running (project=%s)", job.id, job.kind, job.project_id)
@@ -82,18 +88,46 @@ class JobQueue:
             result = fn(job)
             job.result = result
             job.progress = 1.0          # set progress + log before status so observers
-            _log.info("job %s [%s] done", job.id, job.kind)   # waiting on 'done' see both
-            job.status = "done"
+            # the work loop breaks early on cancel — report it as cancelled, not done
+            job.status = "cancelled" if job.cancel_requested else "done"
+            _log.info("job %s [%s] %s", job.id, job.kind, job.status)
         except Exception as exc:  # noqa: BLE001
             job.error = f"{exc}\n{traceback.format_exc()}"
             _log.error("job %s [%s] error: %s", job.id, job.kind, exc)
             job.status = "error"     # set terminal status last
         finally:
-            job.updated_at = datetime.now(timezone.utc).isoformat()
-            with self._lock:
+            self._finalize(job, key)
+
+    def _finalize(self, job: Job, key: Optional[Tuple[str, str]]) -> None:
+        """Stamp finish time and clear the (project,kind) active slot for a terminal job."""
+        job.updated_at = datetime.now(timezone.utc).isoformat()
+        with self._lock:
+            self._finished_at[job.id] = time.monotonic()
+            if key is not None and self._active.get(key) == job.id:
+                del self._active[key]
+
+    def cancel(self, job_id: str) -> bool:
+        """Request cooperative interrupt of a job (ComfyUI-style). A queued job is cancelled
+        immediately; a running one stops at the next loop checkpoint (see is_cancelled).
+        Returns False if the job is unknown or already finished."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None or job.status in ("done", "error", "cancelled"):
+                return False
+            job.cancel_requested = True
+            if job.status == "queued":     # not started yet → cancel now (worker will skip it)
+                job.status = "cancelled"
+                job.updated_at = datetime.now(timezone.utc).isoformat()
                 self._finished_at[job.id] = time.monotonic()
-                if key is not None and self._active.get(key) == job.id:
-                    del self._active[key]
+                for k, v in list(self._active.items()):
+                    if v == job_id:
+                        del self._active[k]
+            _log.info("job %s [%s] cancel requested", job.id, job.kind)
+            return True
+
+    def is_cancelled(self, job: Job) -> bool:
+        """Checked by long-running work loops (shots/video) to stop early on interrupt."""
+        return job.cancel_requested
 
     def _evict_locked(self) -> None:
         """Bound memory: drop oldest finished jobs beyond max_jobs (caller holds lock).

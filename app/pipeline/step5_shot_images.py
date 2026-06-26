@@ -25,6 +25,7 @@ def run(
     model: Optional[str] = None,
     background: Optional[str] = None,
     seed: Optional[int] = None,
+    should_cancel: Optional[Callable[[], bool]] = None,
 ) -> List[ImageAsset]:
     st = state_store.load(project_id)
     if st is None or st.storyboard is None:
@@ -45,6 +46,8 @@ def run(
     total = max(1, len(targets))
     existing = {a.shot_id: a for a in st.shot_images}
     for idx, shot in enumerate(targets):
+        if should_cancel and should_cancel():     # cooperative interrupt — keep shots done so far
+            break
         base_prompt = (shot.image_prompt or shot.description) + suffix
         prompt = backgrounds.apply(base_prompt, background)
         # App-owned seed (ComfyUI-style): the SEED strategy locks the project seed across shots;

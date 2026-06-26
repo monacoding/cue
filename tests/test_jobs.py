@@ -115,6 +115,49 @@ def _await_status(q, job_id, status, timeout=3.0):
     raise AssertionError(f"job {job_id} did not reach {status}")
 
 
+def test_cancel_running_job_is_cooperative():
+    """A running job's work loop checks is_cancelled and stops early; status → cancelled."""
+    q = JobQueue(max_workers=2)
+    started = threading.Event()
+    progressed = []
+
+    def work(job):
+        started.set()
+        for i in range(100):
+            if q.is_cancelled(job):
+                break
+            progressed.append(i)
+            time.sleep(0.02)
+        return progressed
+
+    j = q.submit("shots", "p", work)
+    assert started.wait(2)
+    time.sleep(0.05)
+    assert q.cancel(j.id) is True
+    js = _await_status(q, j.id, "cancelled")
+    assert js.status == "cancelled"
+    assert len(progressed) < 100          # interrupted before finishing all items
+    assert q.cancel(j.id) is False        # already finished → no-op
+    assert q.cancel("does-not-exist") is False
+
+
+def test_cancel_queued_job_before_start():
+    """A job cancelled while still queued is marked cancelled and its fn never runs."""
+    q = JobQueue(max_workers=1)
+    gate = threading.Event()
+    ran = []
+    blocker = q.submit("k", "p", lambda job: gate.wait(2))   # occupies the only worker
+    time.sleep(0.05)
+    queued = q.submit("k2", "p2", lambda job: ran.append(1))  # waits behind the blocker
+    assert q.cancel(queued.id) is True
+    assert q.get(queued.id).status == "cancelled"
+    gate.set()
+    _await(q, blocker.id)
+    time.sleep(0.1)
+    assert q.get(queued.id).status == "cancelled"
+    assert ran == []                       # the cancelled job's fn was skipped
+
+
 def test_active_job_lookup_for_reconnect():
     """active_job exposes the in-flight job per (project, kind) for UI reconnect."""
     q = JobQueue(max_workers=2)

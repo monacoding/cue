@@ -62,6 +62,7 @@ def gen_video(project_id: str, shot_id: str = "", model: str = "opensource"):
             for v in step7_shot_video.run(
                 project_id, only_shot_id=sid, model=model,
                 progress_cb=lambda p: queue.update_progress(j, p),
+                should_cancel=lambda: queue.is_cancelled(j),
             )
         ],
         dedupe=True,

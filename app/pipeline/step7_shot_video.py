@@ -41,6 +41,7 @@ def run(
     only_shot_id: Optional[str] = None,
     progress_cb: Optional[Callable[[float], None]] = None,
     model: str = "opensource",
+    should_cancel: Optional[Callable[[], bool]] = None,
 ) -> List[VideoAsset]:
     assert_gate(project_id)
     if not assembly.ffmpeg_available():
@@ -55,6 +56,8 @@ def run(
     total = max(1, len(targets))
     existing = {v.shot_id: v for v in st.shot_videos}
     for idx, img in enumerate(targets):
+        if should_cancel and should_cancel():     # cooperative interrupt — keep clips done so far
+            break
         shot = shots_by_id.get(img.shot_id)
         dur = float(shot.duration_sec) if shot else 3.0
         camera = shot.camera if shot else "static"

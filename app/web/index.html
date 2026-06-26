@@ -1639,8 +1639,10 @@ const App={
   },
   progressBlock(id,label){
     return `<div id="${id}" style="display:none;margin-top:16px">
-      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px">
-        <span id="${id}Lbl">${label}</span><span id="${id}Pct">0%</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:6px">
+        <span id="${id}Lbl">${label}</span>
+        <span style="display:flex;gap:10px;align-items:center"><span id="${id}Pct">0%</span>
+        <button class="btn-ghost btn-sm" title="Interrupt — keep finished items" onclick="App.stopJob()">■ Stop</button></span></div>
       <div class="bar" style="height:8px;margin:0" role="progressbar" aria-valuemin="0" aria-valuemax="100"
         aria-valuenow="0" aria-labelledby="${id}Lbl" id="${id}Track"><i id="${id}Bar" style="width:0%"></i></div></div>`;
   },
@@ -1652,8 +1654,10 @@ const App={
   async genShots(){await withBtn(event,async()=>{
     const sel=$("#shotStrategy");this._strat=sel?sel.value:"reference";
     const {job_id}=await api(`/api/projects/${this.pid}/shots?strategy=${this._strat}`,"POST");
-    await this.pollJob(job_id,(p)=>this.setProgress("shotProg",p));
-    await this.refresh();toast(`Shot images generated (${this._strat})`);this.render_shots();});},
+    const j=await this.pollJob(job_id,(p)=>this.setProgress("shotProg",p));
+    await this.refresh();
+    toast(j.status==="cancelled"?"중지됨 — 완료된 컷까지 저장":`Shot images generated (${this._strat})`);
+    this.render_shots();});},
 
   // ---------- 6 · EDIT + GATE ----------
   async render_edit(){
@@ -1738,21 +1742,30 @@ const App={
   },
   async genClips(){await withBtn(event,async()=>{
     const {job_id}=await api(`/api/projects/${this.pid}/video?model=${this.videoModel()}`,"POST");
-    await this.pollJob(job_id,(p)=>this.setProgress("vidProg",p));
-    await this.refresh();toast("Clips generated");this.render_video();});},
+    const j=await this.pollJob(job_id,(p)=>this.setProgress("vidProg",p));
+    await this.refresh();
+    toast(j.status==="cancelled"?"중지됨 — 완료된 클립까지 저장":"Clips generated");
+    this.render_video();});},
   pollJob(jobId,onProgress,maxMs=900000){   // 15-min client ceiling — generous for real video gen
+    this._jobId=jobId;                       // track for the Stop button (interrupt)
     return new Promise((resolve,reject)=>{
       const start=Date.now();
+      const done=(fn,arg)=>{ if(this._jobId===jobId)this._jobId=null; fn(arg); };
       const tick=async()=>{
-        let j;try{j=await api(`/api/jobs/${jobId}`);}catch(e){return reject(e);}
+        let j;try{j=await api(`/api/jobs/${jobId}`);}catch(e){return done(reject,e);}
         if(onProgress)onProgress(j.progress||0);
-        if(j.status==="done")return resolve(j);
-        if(j.status==="error")return reject(new Error((j.error||"job failed").split("\n")[0]));
+        if(j.status==="done"||j.status==="cancelled")return done(resolve,j);  // cancelled keeps partial results
+        if(j.status==="error")return done(reject,new Error((j.error||"job failed").split("\n")[0]));
         // bound the poll so a stuck/lost job can't spin the UI forever (clear signal instead)
-        if(Date.now()-start>maxMs)return reject(new Error("Generation timed out — please retry"));
+        if(Date.now()-start>maxMs)return done(reject,new Error("Generation timed out — please retry"));
         setTimeout(tick,450);
       };tick();
     });
+  },
+  async stopJob(){
+    if(!this._jobId){toast("중지할 실행이 없습니다");return;}
+    try{ await api(`/api/jobs/${this._jobId}/cancel`,"POST"); toast("중지 요청 — 완료된 항목까지 저장됩니다"); }
+    catch(e){ toast("중지 실패: "+(e.message||e),true); }
   },
   async regenClip(sid){await withBtn(event,async()=>{
     const {job_id}=await api(`/api/projects/${this.pid}/video?shot_id=${encodeURIComponent(sid)}&model=${this.videoModel()}`,"POST");

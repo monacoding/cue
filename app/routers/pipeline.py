@@ -215,6 +215,7 @@ def gen_shots(project_id: str, shot_id: str = "", strategy: str = "reference", m
                 project_id, only_shot_id=sid, strategy=strat, model=(model or None),
                 background=(background or None),
                 progress_cb=lambda p: queue.update_progress(j, p),
+                should_cancel=lambda: queue.is_cancelled(j),
             )
         ],
         dedupe=True,

@@ -17,6 +17,15 @@ def get_job(job_id: str):
     return job.to_dict()
 
 
+@router.post("/api/jobs/{job_id}/cancel")
+def cancel_job(job_id: str):
+    """Interrupt a running/queued job (ComfyUI-style). Cooperative: the work loop stops at
+    its next shot/clip checkpoint, keeping whatever finished so far. 404 if already done."""
+    if not queue.cancel(job_id):
+        raise HTTPException(404, "job not found or already finished")
+    return {"cancelled": True, "job_id": job_id}
+
+
 @router.get("/api/projects/{project_id}/active-job")
 def active_job(project_id: str, kind: str):
     """Reconnect endpoint: returns the in-flight job for (project, kind) so a
