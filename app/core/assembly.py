@@ -50,22 +50,40 @@ def still_to_kenburns(
     fps: int = 30,
     motion: str = "in",
 ) -> Path:
-    """정지 이미지 → Ken Burns(줌/팬) 클립 (오프라인 image-to-video 베이스라인)."""
+    """정지 이미지 → Ken Burns 클립 (오프라인 image-to-video 베이스라인, 무료).
+
+    motion: in/out(중앙 줌) · left/right/up/down(고정 줌 패닝). 컷 카메라에 맞춰 다양화하면
+    무료 경로도 정적 줌만 반복하지 않고 영상처럼 보인다. 알 수 없는 값은 'in'.
+    """
     if not ffmpeg_available():
         raise RuntimeError("ffmpeg/ffprobe not installed — cannot generate video")
     w, h = wh_for(aspect_ratio)
     frames = max(1, int(round(duration * fps)))
-    # 업스케일 후 zoompan (떨림 방지 위해 큰 캔버스에서 보간)
+    # 업스케일 후 zoompan (떨림 방지 + 패닝 헤드룸 위해 큰 캔버스에서 보간)
     sw, sh = w * 2, h * 2
-    if motion == "out":
-        z = "if(eq(on,0),1.20,max(1.001,zoom-0.0010))"
-    else:  # in
-        z = "min(zoom+0.0010,1.20)"
+    cx, cy = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"   # centered
+    zin = "min(zoom+0.0012,1.22)"
+    zout = "if(eq(on,0),1.22,max(1.001,zoom-0.0012))"
+    den = max(1, frames - 1)
+    pan_r = f"(iw-iw/zoom)*on/{den}"          # left → right
+    pan_l = f"(iw-iw/zoom)*(1-on/{den})"      # right → left
+    pan_d = f"(ih-ih/zoom)*on/{den}"          # top → bottom
+    pan_u = f"(ih-ih/zoom)*(1-on/{den})"      # bottom → top
+    # motion → (zoom expr, x expr, y expr). pans hold a gentle fixed zoom for headroom.
+    presets = {
+        "in":    (zin, cx, cy),
+        "out":   (zout, cx, cy),
+        "left":  ("1.14", pan_l, cy),
+        "right": ("1.14", pan_r, cy),
+        "up":    ("1.14", cx, pan_u),
+        "down":  ("1.14", cx, pan_d),
+    }
+    z, xexpr, yexpr = presets.get(motion, presets["in"])
     vf = (
         f"scale={sw}:{sh}:force_original_aspect_ratio=increase,"
         f"crop={sw}:{sh},"
         f"zoompan=z='{z}':d={frames}:s={w}x{h}:fps={fps}:"
-        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',"
+        f"x='{xexpr}':y='{yexpr}',"
         f"format=yuv420p"
     )
     _run([

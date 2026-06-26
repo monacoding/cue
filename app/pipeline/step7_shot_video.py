@@ -17,9 +17,19 @@ from app.pipeline import read_asset_bytes, save_asset
 from app.pipeline.step6_image_edit import all_approved
 from app.providers.registry import get_video_provider
 
-# 콘티 camera → Ken Burns 모션
-_MOTION = {"dolly_in": "in", "tracking": "in", "pan_left": "in",
-           "static": "out", "dolly_out": "out"}
+# 콘티 camera → Ken Burns 모션 (무료 ffmpeg 베이스라인을 카메라 의도에 맞춰 다양화)
+_MOTION = {
+    "dolly_in": "in", "push_in": "in", "zoom_in": "in", "tracking": "in",
+    "dolly_out": "out", "pull_out": "out", "zoom_out": "out",
+    "pan_left": "left", "pan_right": "right",
+    "pan_up": "up", "tilt_up": "up", "pan_down": "down", "tilt_down": "down",
+}
+# camera 가 없거나 'static'/미지정이면 컷 순서대로 모션을 순환시켜 단조로움을 피한다.
+_MOTION_CYCLE = ("in", "left", "out", "right", "up", "down")
+
+
+def _motion_for(camera: str, idx: int) -> str:
+    return _MOTION.get((camera or "").lower()) or _MOTION_CYCLE[idx % len(_MOTION_CYCLE)]
 
 
 class CostGateError(RuntimeError):
@@ -67,7 +77,7 @@ def run(
             still, prompt, duration_sec=dur,
             with_audio=spec.audio.voiceover if spec else True,
             aspect_ratio=spec.aspect_ratio if spec else "9:16",
-            motion=_MOTION.get(camera, "in"),
+            motion=_motion_for(camera, idx),
         ) if still is not None else None
 
         if result and result.video_bytes:
