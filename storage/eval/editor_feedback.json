@@ -1,0 +1,119 @@
+{
+  "n": 100,
+  "mean_satisfaction": 47.8,
+  "min_satisfaction": 14.3,
+  "fully_satisfied": 0,
+  "top_requests": [
+    {
+      "feature": "in_out_points",
+      "label": "In/out points + range",
+      "cat": "timeline",
+      "requested_by": 80.2
+    },
+    {
+      "feature": "filters_looks",
+      "label": "Filters / LUT looks",
+      "cat": "color",
+      "requested_by": 69.8
+    },
+    {
+      "feature": "real_waveform",
+      "label": "Real waveform from the audio",
+      "cat": "audio",
+      "requested_by": 67.6
+    },
+    {
+      "feature": "clip_speed",
+      "label": "Clip speed / time-remap",
+      "cat": "clip",
+      "requested_by": 67.0
+    },
+    {
+      "feature": "text_styling",
+      "label": "Text styling (font/size/color/pos)",
+      "cat": "graphics",
+      "requested_by": 59.8
+    },
+    {
+      "feature": "overlay_track",
+      "label": "Overlay track (PiP / text layer)",
+      "cat": "graphics",
+      "requested_by": 58.6
+    },
+    {
+      "feature": "auto_captions",
+      "label": "Auto captions / subtitles",
+      "cat": "graphics",
+      "requested_by": 54.4
+    },
+    {
+      "feature": "title_templates",
+      "label": "Title / lower-third templates",
+      "cat": "graphics",
+      "requested_by": 50.4
+    },
+    {
+      "feature": "audio_keyframes",
+      "label": "Volume keyframes (ducking)",
+      "cat": "audio",
+      "requested_by": 50.0
+    },
+    {
+      "feature": "color_correct",
+      "label": "Color correction (lift/gamma/gain)",
+      "cat": "color",
+      "requested_by": 49.8
+    },
+    {
+      "feature": "transition_duration",
+      "label": "Transition duration control",
+      "cat": "transition",
+      "requested_by": 47.8
+    },
+    {
+      "feature": "nudge_clip",
+      "label": "Nudge selected clip by frame",
+      "cat": "timeline",
+      "requested_by": 36.4
+    },
+    {
+      "feature": "audio_fades",
+      "label": "Audio fade in/out handles",
+      "cat": "audio",
+      "requested_by": 36.0
+    },
+    {
+      "feature": "adjust_per_clip",
+      "label": "Per-clip brightness/contrast",
+      "cat": "color",
+      "requested_by": 36.0
+    },
+    {
+      "feature": "safe_guides",
+      "label": "Safe-area / title guides",
+      "cat": "preview",
+      "requested_by": 36.0
+    }
+  ],
+  "gaps_by_category": {
+    "graphics": 186,
+    "audio": 154,
+    "color": 129,
+    "timeline": 108,
+    "clip": 56,
+    "transition": 40,
+    "preview": 30,
+    "a11y": 24,
+    "workflow": 12
+  },
+  "sample_comments": [
+    "As an ex-CapCut short-form social editor, I'd bounce without auto captions / subtitles.",
+    "As an ex-CapCut short-form social editor, I really want auto captions / subtitles.",
+    "As an ex-CapCut short-form social editor, I can't finish a cut without audio fade in/out handles.",
+    "As an ex-CapCut audio post editor, I'd bounce without audio fade in/out handles.",
+    "As an ex-CapCut audio post editor, I really want per-clip brightness/contrast.",
+    "As an ex-Premiere Pro audio post editor, I can't finish a cut without audio fade in/out handles.",
+    "As an ex-Premiere Pro color grading editor, I'd bounce without per-clip brightness/contrast.",
+    "As an ex-Premiere Pro color grading editor, I really want per-clip brightness/contrast."
+  ]
+}

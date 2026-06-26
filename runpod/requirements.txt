@@ -1,0 +1,7 @@
+runpod
+torch
+pillow
+# DiffSynth-Studio: install from the same source you trained with. Either:
+#   pip install diffsynth
+# or (recommended — matches your training):
+#   pip install git+https://github.com/modelscope/DiffSynth-Studio.git

@@ -1,0 +1,25 @@
+# 시크릿 — 절대 커밋 금지
+.env
+
+# 파이썬
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 런타임 생성 에셋/상태 (프로젝트별 데이터)
+storage/projects/*
+!storage/projects/.gitkeep
+
+# OS
+.DS_Store
+
+# 에이전트 런타임 루프 상태 (소스 아님)
+loop_state.json
+
+# LoRA / model weights (keep out of the repo)
+*.safetensors
+*.ckpt
+*.pt
+loras/

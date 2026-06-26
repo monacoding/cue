@@ -1,0 +1,345 @@
+{
+  "n": 100,
+  "overall": {
+    "mean": 76.4,
+    "median": 75.4,
+    "min": 70.3,
+    "max": 81.2,
+    "stdev": 2.7
+  },
+  "axis_means_sorted": {
+    "Specificity & proof": 58.1,
+    "Emotional resonance": 63.1,
+    "Originality": 72.0,
+    "Audience / platform fit": 73.0,
+    "Clarity & concision": 74.6,
+    "Hook & scroll-stopping": 77.0,
+    "Visual concept": 79.0,
+    "Brand strategy": 89.1,
+    "Message–market fit": 91.4,
+    "Conversion / CTA": 92.0
+  },
+  "budget_tiers": {
+    "invest": 100
+  },
+  "total_daily_budget_usd": 20000,
+  "score_by_input_quality": {
+    "0": 78.0,
+    "1": 77.1,
+    "2": 74.2
+  },
+  "worst_5": [
+    {
+      "name": "Knifely",
+      "input_quality": 0,
+      "headline": "Knifely: pro self-sharpening chef knife. Never needs sharpening.",
+      "cta": "Shop Knifely today",
+      "key_message": "pro self-sharpening chef knife. Never needs sharpening, Japanese steel, balanced",
+      "overall": 70.3,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Specificity & proof",
+          "score": 40.0,
+          "critique": "vague — add a number or specific benefit"
+        },
+        {
+          "specialty": "Hook & scroll-stopping",
+          "score": 45.0,
+          "critique": "hook is long or flat — front-load intrigue"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        }
+      ]
+    },
+    {
+      "name": "Knifely",
+      "input_quality": 0,
+      "headline": "Knifely: self-sharpening chef knife. Never needs sharpening.",
+      "cta": "Shop Knifely today",
+      "key_message": "self-sharpening chef knife. Never needs sharpening, Japanese steel, balanced gri",
+      "overall": 72.8,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Specificity & proof",
+          "score": 40.0,
+          "critique": "vague — add a number or specific benefit"
+        },
+        {
+          "specialty": "Hook & scroll-stopping",
+          "score": 60.0,
+          "critique": "hook is long or flat — front-load intrigue"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        }
+      ]
+    },
+    {
+      "name": "Supplementva",
+      "input_quality": 2,
+      "headline": "Still settling for less? Try Supplementva.",
+      "cta": "Shop Supplementva today",
+      "key_message": "the daily greens powder everyone is talking about.",
+      "overall": 73.5,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Specificity & proof",
+          "score": 40.0,
+          "critique": "vague — add a number or specific benefit"
+        },
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Clarity & concision",
+          "score": 71.0,
+          "critique": "clear and scannable"
+        }
+      ]
+    },
+    {
+      "name": "Plannera",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Plannera.",
+      "cta": "Shop Plannera today",
+      "key_message": "is a undated productivity planner that helps you lays flat.",
+      "overall": 73.5,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Specificity & proof",
+          "score": 40.0,
+          "critique": "vague — add a number or specific benefit"
+        },
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Clarity & concision",
+          "score": 71.0,
+          "critique": "clear and scannable"
+        }
+      ]
+    },
+    {
+      "name": "Supplementva",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Supplementva.",
+      "cta": "Shop Supplementva today",
+      "key_message": "is a premium daily greens powder that helps you tastes like green apple.",
+      "overall": 73.5,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Specificity & proof",
+          "score": 40.0,
+          "critique": "vague — add a number or specific benefit"
+        },
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Clarity & concision",
+          "score": 71.0,
+          "critique": "clear and scannable"
+        }
+      ]
+    }
+  ],
+  "best_5": [
+    {
+      "name": "Fitnessva",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Fitnessva.",
+      "cta": "Shop Fitnessva today",
+      "key_message": "Fitnessva is a smart jump rope that helps you burns 500 calories in 20 minutes",
+      "overall": 81.2,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        },
+        {
+          "specialty": "Audience / platform fit",
+          "score": 73.0,
+          "critique": "well-matched to platform/tone"
+        }
+      ]
+    },
+    {
+      "name": "Speakerix",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Speakerix.",
+      "cta": "Shop Speakerix today",
+      "key_message": "Speakerix is a premium waterproof bluetooth speaker that helps you 24-hour playt",
+      "overall": 81.2,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        },
+        {
+          "specialty": "Audience / platform fit",
+          "score": 73.0,
+          "critique": "well-matched to platform/tone"
+        }
+      ]
+    },
+    {
+      "name": "Fitnessva",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Fitnessva.",
+      "cta": "Shop Fitnessva today",
+      "key_message": "Fitnessva is a pro smart jump rope that helps you burns 500 calories in 20 minut",
+      "overall": 81.2,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        },
+        {
+          "specialty": "Audience / platform fit",
+          "score": 73.0,
+          "critique": "well-matched to platform/tone"
+        }
+      ]
+    },
+    {
+      "name": "Speakerix",
+      "input_quality": 1,
+      "headline": "Still settling for less? Try Speakerix.",
+      "cta": "Shop Speakerix today",
+      "key_message": "Speakerix is a everyday waterproof bluetooth speaker that helps you 24-hour play",
+      "overall": 81.2,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Emotional resonance",
+          "score": 63.0,
+          "critique": "appeal is functional, add aspiration/pain"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        },
+        {
+          "specialty": "Audience / platform fit",
+          "score": 73.0,
+          "critique": "well-matched to platform/tone"
+        }
+      ]
+    },
+    {
+      "name": "Lampva",
+      "input_quality": 0,
+      "headline": "Still settling for less? Try Lampva.",
+      "cta": "Shop Lampva today",
+      "key_message": "Wake up gently with light, no more jarring alarms, 30 light settings",
+      "overall": 80.7,
+      "budget": {
+        "tier": "invest",
+        "daily_usd": 200,
+        "max_cpm_usd": 12.0,
+        "rationale": "Solid creative — fund and optimize."
+      },
+      "weakest": [
+        {
+          "specialty": "Emotional resonance",
+          "score": 72.0,
+          "critique": "emotionally resonant"
+        },
+        {
+          "specialty": "Originality",
+          "score": 72.0,
+          "critique": "fresh angle"
+        },
+        {
+          "specialty": "Audience / platform fit",
+          "score": 73.0,
+          "critique": "well-matched to platform/tone"
+        }
+      ]
+    }
+  ]
+}
