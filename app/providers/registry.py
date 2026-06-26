@@ -18,6 +18,7 @@ from app.providers.base import (
     VideoProvider,
 )
 from app.providers.image_flux import FluxProvider
+from app.providers.image_krea import KreaProvider
 from app.providers.image_nanobanana import NanoBananaProvider
 from app.providers.image_pollinations import PollinationsProvider
 from app.providers.image_qwen_runpod import QwenRunPodProvider
@@ -56,6 +57,11 @@ def _fallback_image() -> ImageProvider:
 
 
 @lru_cache(maxsize=1)
+def _krea_image() -> ImageProvider:
+    return KreaProvider()
+
+
+@lru_cache(maxsize=1)
 def _free_image() -> ImageProvider:
     return PollinationsProvider()
 
@@ -67,7 +73,7 @@ def image_chain() -> List[ImageProvider]:
     qwen = _qwen_image()
     if qwen.is_real:
         chain.append(qwen)
-    chain += [_primary_image(), _fallback_image()]   # real if keyed, else mock
+    chain += [_primary_image(), _fallback_image(), _krea_image()]   # real if keyed, else mock
     free = _free_image()
     if free.is_real:                                  # free AI images (no key) before the mock fallback
         chain.append(free)
@@ -88,6 +94,7 @@ _IMAGE_PROVIDERS_BY_KEY = {
     "qwen": _qwen_image,
     "nano_banana": _primary_image,
     "flux": _fallback_image,
+    "krea": _krea_image,
     "free": _free_image,
 }
 IMAGE_MODEL_LABELS = {
@@ -95,6 +102,7 @@ IMAGE_MODEL_LABELS = {
     "qwen": "Qwen (RunPod)",
     "nano_banana": "Nano Banana",
     "flux": "Flux",
+    "krea": "Krea 2 (Turbo · fal)",
     "free": "Free · Pollinations",
 }
 

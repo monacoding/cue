@@ -269,6 +269,69 @@ def test_seedance_fal_parses_video_url(monkeypatch):
     assert prov._call_fal(b"PNG", "a runner", 5, True) == b"MP4BYTES"
 
 
+def test_krea_fal_parses_image_and_sends_turbo_params(monkeypatch):
+    """Krea 2 (fal) — generate_image returns the fal image bytes and sends turbo steps + seed."""
+    import httpx
+
+    from app.config import settings
+    from app.providers.image_krea import KreaProvider
+
+    captured = {}
+
+    class _Resp:
+        def __init__(self, *, json_data=None, content=None):
+            self._json, self.content = json_data, content
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self._json
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, url, headers=None, json=None):
+            captured["url"], captured["payload"] = url, json
+            return _Resp(json_data={"images": [{"url": "https://x/img.png"}]})
+
+        def get(self, url):
+            return _Resp(content=b"KREAPNG")
+
+    monkeypatch.setattr(httpx, "Client", _Client)
+    monkeypatch.setattr(settings, "force_mock", False)
+    prov = KreaProvider()
+    prov.fal_key = "k"
+    res = prov.generate_image("a fox in snow", "9:16", seed=42)
+    assert res.image_bytes == b"KREAPNG"
+    assert res.meta["mode"] == "real" and res.provider == "krea-2"
+    assert captured["url"].endswith("fal-ai/krea-2/turbo")
+    assert captured["payload"]["num_inference_steps"] == 8
+    assert captured["payload"]["seed"] == 42
+
+
+def test_krea_mock_fallback_without_key(monkeypatch):
+    """No FAL_KEY → Krea falls back to a deterministic mock image (keyless guarantee)."""
+    import io
+
+    from PIL import Image
+
+    from app.providers.image_krea import KreaProvider
+
+    prov = KreaProvider()
+    prov.fal_key = ""
+    res = prov.generate_image("a fox", "1:1", seed=7)
+    assert res.meta["mode"] == "mock" and "mock" in res.provider
+    Image.open(io.BytesIO(res.image_bytes)).verify()   # valid PNG
+
+
 # ---------------------------------------------------------------------------
 # Kling / Veo fal video paths — request building + video.url fetch (mock httpx)
 # ---------------------------------------------------------------------------
