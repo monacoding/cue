@@ -1178,3 +1178,49 @@ def test_project_list_has_manager_fields_and_rename(pid):
     assert r.status_code == 200 and r.json()["title"] == "Renamed Ad"
     assert state_store.load(pid).title == "Renamed Ad"
     assert client.patch("/api/projects/nope", json={"title": "x"}).status_code == 404
+
+
+# --------------------------------------------------------------------------
+# Proof-point extraction & surfacing (Phase 1 — specificity)
+# --------------------------------------------------------------------------
+def test_extract_proofs_picks_numeric_claims():
+    from app.pipeline.step1_brief import _extract_proofs
+
+    proofs = _extract_proofs("Wireless earbuds. 40-hour battery, active noise cancelling, "
+                             "instant pairing. Removes 10x more plaque.")
+    assert "40-hour battery" in proofs            # numeric claim captured
+    assert "active noise cancelling" not in proofs  # no number → not a proof point
+    assert len(proofs) <= 3
+
+
+def test_brief_populates_proof_points(pid):
+    spec = step1_brief.run(pid, product_text="Earbudo — wireless earbuds. 40-hour battery, "
+                                             "active noise cancelling, instant pairing.")
+    assert any("40-hour" in p for p in spec.product.proof_points)
+
+
+def test_storyboard_surfaces_proof_in_captions(pid):
+    from app.core.schemas import SpecRequest
+
+    step1_brief.run(pid, product_text="Earbudo — wireless earbuds. 40-hour battery, "
+                                      "active noise cancelling, instant pairing.")
+    step2_spec.run(pid, SpecRequest(duration_sec=15))
+    sb = step3_storyboard.run(pid)
+    captions = " ".join(s.on_screen_text.text_ko for s in sb.shots)
+    assert "40-hour battery" in captions          # concrete proof appears on screen
+
+
+def test_proof_led_cta_when_generic(pid):
+    """When the storyboard has no action-verb CTA line, a proof point leads the CTA."""
+    from app.core.schemas import Storyboard, Shot, OnScreenText
+    from app.pipeline.step8_assemble import _default_cta
+
+    step1_brief.run(pid, product_text="Earbudo earbuds. 40-hour battery.")
+    st = state_store.load(pid)
+    st.adspec.product.proof_points = ["40-hour battery"]
+    # storyboard whose captions contain NO action verb → pick_cta falls back to generic
+    st.storyboard = Storyboard(shots=[
+        Shot(id="shot_1", on_screen_text=OnScreenText(text_ko="Forget the noise")),
+    ])
+    state_store.save(st)
+    assert _default_cta(state_store.load(pid)) == "Get the 40-hour battery today"

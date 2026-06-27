@@ -17,6 +17,40 @@ from app.providers.registry import get_llm
 
 _IMG_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".bmp")
 
+# units that signal a concrete, verifiable claim (proof) — used to rank extracted clauses
+_PROOF_UNIT = re.compile(
+    r"\b(hours?|hrs?|minutes?|mins?|seconds?|secs?|days?|nights?|weeks?|months?|years?|"
+    r"x|times|%|percent|calories|cal|bar|watts?|w|lbs?|kg|oz|ounces?|inch|inches|cm|mm|"
+    r"k\+?|million|monitors?)\b",
+    re.IGNORECASE,
+)
+
+
+def _extract_proofs(text: str, limit: int = 3) -> List[str]:
+    """Pull concrete proof claims (short clauses carrying a number) from the source text,
+    e.g. "40-hour battery", "100-night trial", "removes 10x more plaque". Numeric clauses are
+    the strongest specificity/proof signal; vague clauses are skipped. Returns up to `limit`."""
+    out: List[str] = []
+    seen = set()
+    for raw in re.split(r"[.;,\n]+", text or ""):
+        c = raw.strip(" .—–-:•\t")
+        if not c or not any(ch.isdigit() for ch in c):
+            continue
+        words = c.split()
+        if not (1 <= len(words) <= 8):
+            continue
+        # keep clauses that read like a claim: a number plus a unit or a few descriptive words
+        if not (_PROOF_UNIT.search(c) or len(words) >= 2):
+            continue
+        key = c.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(c[:60])
+        if len(out) >= limit:
+            break
+    return out
+
 
 def _looks_like_image_url(u: str) -> bool:
     """True for a direct image link (ignoring any query string)."""
@@ -123,16 +157,19 @@ def run(
             # fallback: the descriptive remainder after the name on line 1, else next sentence
             rest = first_line[len(name):].lstrip(" —-–:").strip()
             key = rest or (sentences[1] if len(sentences) > 1 else name)
-        return {"name": name, "description": desc, "key_message": key[:80]}
+        return {"name": name, "description": desc, "key_message": key[:80],
+                "proof_points": _extract_proofs(text)}
 
     system = (
         "You are an ad strategist. Extract the core ad information from the product source "
         "(web scrape / user input). Produce name (product name), description (2-3 sentences), "
-        "and key_message (one-line core value proposition)."
+        "key_message (one-line core value proposition), and proof_points (up to 3 concrete, "
+        "verifiable claims with numbers/specifics, e.g. '40-hour battery', '100-night trial')."
     )
     user = (f"Product source:\n{source or '(no text provided — read the product from the attached image)'}"
             f"\nURL: {product_url}")
-    schema = {"name": "str", "description": "str", "key_message": "str"}
+    schema = {"name": "str", "description": "str", "key_message": "str",
+              "proof_points": ["str"]}
 
     have_text = bool(source.strip())
     # Gather image bytes (local uploads or remote URLs) so a vision-capable LLM can read the
@@ -157,8 +194,16 @@ def run(
         v = (data.get(field) or "").strip()
         return v or (getattr(prev, field, "") if prev else "")
 
+    # proof_points: model may return a list (or omit it); fall back to extracting from the
+    # source text, then to any previously-captured proofs. Normalize to ≤3 clean strings.
+    raw_proofs = data.get("proof_points")
+    if not isinstance(raw_proofs, list) or not raw_proofs:
+        raw_proofs = _extract_proofs(source) or (getattr(prev, "proof_points", []) if prev else [])
+    proof_points = [str(p).strip()[:60] for p in raw_proofs if str(p).strip()][:3]
+
     product = Product(name=_pick("name"), description=_pick("description"),
-                      key_message=_pick("key_message"), image_urls=image_urls)
+                      key_message=_pick("key_message"), image_urls=image_urls,
+                      proof_points=proof_points)
     if st.adspec is None:
         st.adspec = AdSpec(project_id=project_id, format=st.format, product=product)
     else:

@@ -48,6 +48,9 @@ class Product(BaseModel):
     description: str = ""
     key_message: str = ""
     image_urls: List[str] = Field(default_factory=list)
+    # concrete, verifiable proof claims extracted from the source (e.g. "40-hour battery",
+    # "100-night trial") — surfaced into hooks/storyboard/CTA to raise specificity & proof.
+    proof_points: List[str] = Field(default_factory=list)
 
 
 class Brand(BaseModel):

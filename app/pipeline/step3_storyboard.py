@@ -43,9 +43,15 @@ def _mock_storyboard(spec, concept: Optional[Concept] = None) -> Dict:
     hook_text = concept.hook if concept else msg
     # branded, action-led CTA copy (surfaces the brand + a verb) instead of a generic one
     cta_text = f"Shop {spec.product.name} today" if spec.product.name else "Shop now"
-    # supporting captions: split the key message into benefit clauses so each body shot carries
-    # a distinct, progressive on-screen line (varied storyboard + more specifics on screen)
+    # supporting captions: lead with concrete proof claims, then key-message benefit clauses —
+    # so each body shot carries a DISTINCT, specific on-screen line (proof surfaced + varied
+    # storyboard) instead of repeating one generic caption.
+    proofs = list(getattr(spec.product, "proof_points", None) or [])   # concrete numeric claims
     benefits = [b.strip(" .").capitalize() for b in re.split(r"[;,]", msg) if len(b.strip()) > 2]
+    captions: List[str] = []
+    for c in proofs + benefits:                                        # proof first, dedup
+        if c and c not in captions:
+            captions.append(c)
     body_idx = 0
     beats = _distribute_beats(n)
     per = max(1.0, round(spec.duration_sec / n, 1))
@@ -58,8 +64,8 @@ def _mock_storyboard(spec, concept: Optional[Concept] = None) -> Dict:
             on_text = hook_text
         elif beat == "cta":
             on_text = cta_text
-        elif benefits:
-            on_text = benefits[body_idx % len(benefits)]   # progressive benefit caption
+        elif captions:
+            on_text = captions[body_idx % len(captions)]   # distinct proof/benefit caption
             body_idx += 1
         else:
             on_text = ""
@@ -160,7 +166,9 @@ def run(project_id: str, concept_id: Optional[str] = None) -> Storyboard:
         "on_screen_text{text_ko,position,style_ref}, audio_cue{vo_ko,sfx,music_beat}, "
         "image_prompt, consistency_anchor. "
         f"Follow a hook→…→cta ad narrative; shot 1 must be a strong hook. "
-        f"Write all on-screen text and voiceover in {lang_name}."
+        f"At least one shot's on_screen_text must state a concrete proof claim from the "
+        f"product's proof_points (a number/specific), and the benefit beat should carry an "
+        f"emotional payoff. Write all on-screen text and voiceover in {lang_name}."
     )
     concept_block = ""
     if concept:

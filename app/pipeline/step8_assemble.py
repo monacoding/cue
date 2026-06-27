@@ -39,7 +39,13 @@ def _default_cta(st) -> str:
     sb = st.storyboard
     shots_text = [s.on_screen_text.text_ko.strip() for s in sb.shots] if sb and sb.shots else []
     headline = shots_text[0] if shots_text else ""
-    return pick_cta(shots_text, headline, name)
+    cta = pick_cta(shots_text, headline, name)
+    # if no action-led CTA was found in the storyboard (generic fallback), lead with a concrete
+    # proof point when we have one — "Get the 40-hour battery today" beats "Shop now".
+    proofs = (st.adspec.product.proof_points if (st.adspec and st.adspec.product) else []) or []
+    if proofs and cta in (f"Shop {name} today", "Shop now"):
+        return f"Get the {proofs[0]} today"
+    return cta
 
 
 def render_static(project_id: str, req: RenderRequest) -> str:
