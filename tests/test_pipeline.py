@@ -1257,3 +1257,18 @@ def test_export_import_roundtrip(pid):
         state_store.delete_project(new_id)
 
     assert client.post("/api/projects/import", json={"garbage": 1}).status_code == 400
+
+
+def test_templates_endpoint_lists_category_presets():
+    """Phase 3b: /api/templates returns category presets with tone/platform/duration."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    r = TestClient(app).get("/api/templates")
+    assert r.status_code == 200
+    data = r.json()
+    keys = [t["key"] for t in data]
+    assert "food" in keys and "tech" in keys and "" in keys   # incl. the manual/none option
+    food = next(t for t in data if t["key"] == "food")
+    assert food["tone"] and food["platform"] and food["duration_sec"]

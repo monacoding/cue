@@ -47,6 +47,7 @@
 - **전문가 패널 평가**(`app/eval/expert_panel.py`): 10인 광고 전문가 페르소나가 생성 광고를 채점 → 권장 광고비(예산 tier) 책정. `scripts/sim_100.py`로 100 제품 시뮬레이션·집계해 카피 로직의 체계적 약점을 찾고 개선(평가 주도 개선: 패널 평균 65.7→75.3).
 - **UI/언어**: 세련된 다크 SaaS UI, 키보드 네비(←/→), **전 표면 영어**(기본 언어 en).
 - **프로젝트 export/import(Phase 3a, ComfyUI '워크플로우=파일')**: `GET /api/projects/{id}/export`→포터블 `.cue.json`(spec/콘티/컨셉), `POST /api/projects/import`→새 프로젝트 복원(`state.import_project`, project_id 재키잉, 생성 에셋은 재생성 대상이라 미번들→스토리보드 단계 착지). UI 상단 ⤓Export/⤒Import.
+- **카테고리 프리셋(Phase 3b)**: `core/templates.py` 카테고리별(food/beauty/tech/fitness/fashion/home/saas) tone·platform·duration 프리셋 → `GET /api/templates`, spec 단계 "Category preset" 셀렉트가 폼을 자동 채움. 컨셉 루브릭과 비결합(회귀 회피).
 - **API 구조**: 라우트는 도메인별 `app/routers/`(system·projects·pipeline·recipe·jobs·output)로 분리, `app/main.py`는 앱 조립+예외 핸들러만. 공용 `get_state_or_404`는 `app/deps.py`. 이미지 조회는 `ProjectState.image_asset(shot_id)`, data-URI 디코드는 `pipeline.decode_image_data_uri`로 단일화.
 - **안전/위생**: 비용 게이팅, shot_count/duration 상한, 입력 검증(400), 원자적 저장+버전, `.gitignore`/`Dockerfile`.
 - 키 없으면 각 provider는 결정론적 mock/오프라인 동작 → 키 없이 end-to-end 실행 가능.

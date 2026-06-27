@@ -1483,6 +1483,8 @@ const App={
     const s=this.state.adspec||{};
     $("#main").innerHTML=`<div class="card fade">
       ${this.head(2,"Ad Spec","Length · platform · ratio. Shot count is auto-derived from duration (editable).")}
+      <div class="row"><div><label>Category preset <span style="color:var(--faint);font-weight:400">— prefills tone · platform · duration</span></label>
+        <select class="fld" id="tmpl" onchange="App.applyTemplate(this.value)"><option value="">Loading…</option></select></div></div>
       <div class="row3">
         <div><label>Aspect ratio</label><select class="fld" id="ar">${opt(["9:16","1:1","16:9","4:5"],s.aspect_ratio)}</select></div>
         <div><label>Platform</label><select class="fld" id="pf">${opt(["instagram_reels","tiktok","youtube_shorts","feed"],s.platform)}</select></div>
@@ -1506,6 +1508,19 @@ const App={
         <button class="btn-ok" onclick="App.approveSpec()">Approve & continue →</button>
       </div>
     </div>`;
+    this._fillTemplates();
+  },
+  async _fillTemplates(){
+    const sel=$("#tmpl");if(!sel)return;
+    if(!this._templates){try{this._templates=await api('/api/templates');}catch(e){this._templates=[{key:'',label:'None'}];}}
+    sel.innerHTML=this._templates.map(t=>`<option value="${esc(t.key)}">${esc(t.label)}</option>`).join('');
+  },
+  applyTemplate(key){
+    const t=(this._templates||[]).find(x=>x.key===key);if(!t||!t.key)return;
+    if($("#tone"))$("#tone").value=t.tone||'';
+    if($("#pf")&&t.platform)$("#pf").value=t.platform;
+    if($("#dur")&&t.duration_sec){$("#dur").value=t.duration_sec;this.deriveShots();}
+    toast(`프리셋 적용: ${t.label}`);
   },
   deriveShots(){const d=+$("#dur").value;$("#sc").value=Math.max(3,Math.min(12,Math.round(d/3)));},
   specPayload(){return{aspect_ratio:$("#ar").value,platform:$("#pf").value,language:$("#lang").value,

@@ -98,6 +98,14 @@ def background_options():
     return backgrounds.options()
 
 
+@router.get("/api/templates")
+def ad_templates():
+    """Category presets (tone/platform/duration) that pre-fill the step-2 spec form."""
+    from app.core import templates
+
+    return templates.options()
+
+
 _FAVICON = (  # CUE — a play/cue triangle in a lime rounded badge
     "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
     "<rect width='32' height='32' rx='8' fill='#c8f750'/>"
