@@ -1581,6 +1581,7 @@ const App={
     $("#main").innerHTML=`<div class="card fade">
       ${this.head(4,"Main Image","The fixed anchor image that locks the look across all shot images. Iterate the prompt to lock the look. Image model: Qwen (RunPod) when set, else Nano Banana → Flux.")}
       <div style="margin-bottom:14px"><button class="btn-ghost btn-sm" onclick="App.testQwen()">🔌 Test RunPod Qwen connection</button>
+        <button class="btn-ghost btn-sm" onclick="App.testFal()">🔌 Test fal (Flux·Krea)</button>
         <span id="qwenTest" style="margin-left:10px;font-size:12.5px;color:var(--muted)"></span></div>
       <label>Prompt <span style="color:var(--faint);font-weight:400">(from your storyboard — edit freely)</span></label>
       <textarea id="hprompt" placeholder="Main image prompt">${esc(defaultPrompt)}</textarea>
@@ -1602,7 +1603,19 @@ const App={
       if(d.real_call_ok){el.innerHTML=`<span style="color:var(--ok)">✓ connected (${d.endpoint_kind}) — got ${d.image_bytes} bytes</span>`;}
       else{el.innerHTML=`<span style="color:var(--bad)">✗ failed: ${esc(d.error||'')}</span>`;}
     });},
-  async genHero(){await withBtn(event,async()=>{this.state.hero_image=await api(`/api/projects/${this.pid}/hero`,"POST",{prompt:$("#hprompt").value||null});await this.refresh();toast("Main image generated");this.render_hero();});},
+  async testFal(){const el=$("#qwenTest");if(el)el.innerHTML='<span class="spin"></span> testing fal…';
+    await withBtn(event,async()=>{
+      const d=await api(`/api/providers/fal/test`);
+      const line=(name,r)=>!r.configured?`${name}: ⚪ no key`
+        :r.real_call_ok?`<span style="color:var(--ok)">${name}: ✓ ok</span>`
+        :`<span style="color:var(--bad)">${name}: ✗ ${esc((r.error||'').slice(0,90))}</span>`;
+      el.innerHTML=`${line('Flux',d.flux)} · ${line('Krea',d.krea)}`;
+    });},
+  _falWarn(provider){  // a keyed fal account that fell back to mock → tell the user why
+    if(typeof provider==='string' && provider.endsWith('·mock') && this.health&&this.health.providers&&this.health.providers.fal)
+      toast('fal 모델이 실패해 무료/mock으로 폴백됨 — "Test fal"로 사유 확인',true);
+  },
+  async genHero(){await withBtn(event,async()=>{this.state.hero_image=await api(`/api/projects/${this.pid}/hero`,"POST",{prompt:$("#hprompt").value||null});await this.refresh();toast("Main image generated");this._falWarn(this.state.hero_image&&this.state.hero_image.provider);this.render_hero();});},
   async editHero(){const ins=$("#hedit").value;if(!ins){toast("Enter an edit instruction",true);return;}
     await withBtn(event,async()=>{await api(`/api/projects/${this.pid}/shots/hero/edit`,"POST",{instruction:ins});await this.refresh();toast("Main image edited");this.render_hero();});},
   async approveHero(){await api(`/api/projects/${this.pid}/hero/approve`,"POST");await this.refresh();toast("Hero approved ✓");this.go(5);},

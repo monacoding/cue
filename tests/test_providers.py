@@ -279,8 +279,8 @@ def test_krea_fal_parses_image_and_sends_turbo_params(monkeypatch):
     captured = {}
 
     class _Resp:
-        def __init__(self, *, json_data=None, content=None):
-            self._json, self.content = json_data, content
+        def __init__(self, *, status_code=200, json_data=None, content=None, text=""):
+            self.status_code, self._json, self.content, self.text = status_code, json_data, content, text
 
         def raise_for_status(self):
             pass
@@ -315,6 +315,52 @@ def test_krea_fal_parses_image_and_sends_turbo_params(monkeypatch):
     assert captured["url"].endswith("fal-ai/krea-2/turbo")
     assert captured["payload"]["num_inference_steps"] == 8
     assert captured["payload"]["seed"] == 42
+
+
+def test_fal_403_surfaces_reason_not_silent(monkeypatch):
+    """A keyed fal provider that 403s (exhausted balance) must surface the reason — both in
+    the mock fallback meta and in diagnose() — instead of silently mocking."""
+    import httpx
+
+    from app.config import settings
+    from app.providers.image_krea import KreaProvider
+
+    class _Resp:
+        status_code = 403
+        text = '{"detail": "User is locked. Reason: Exhausted balance."}'
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {}
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            return _Resp()
+
+        def get(self, *a, **k):
+            return _Resp()
+
+    monkeypatch.setattr(httpx, "Client", _Client)
+    monkeypatch.setattr(settings, "force_mock", False)
+    prov = KreaProvider()
+    prov.fal_key = "k"
+    res = prov.generate_image("a fox", "1:1")
+    assert res.meta["mode"] == "mock" and res.meta.get("fell_back") is True
+    assert "403" in res.meta.get("reason", "") and "Exhausted balance" in res.meta["reason"]
+    diag = prov.diagnose()
+    assert diag["configured"] is True and diag["real_call_ok"] is False
+    assert "Exhausted balance" in (diag["error"] or "")
 
 
 def test_krea_mock_fallback_without_key(monkeypatch):

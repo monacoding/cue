@@ -36,6 +36,17 @@ def llm_cli_test():
     return ClaudeCLIProvider().diagnose()
 
 
+@router.get("/api/providers/fal/test")
+def fal_connectivity_test():
+    """Self-test the fal image providers (Flux, Krea 2). Surfaces the real failure reason
+    (e.g. 403 'exhausted balance') instead of letting a keyed account silently fall back to
+    a mock. Each entry: {provider, configured, real_call_ok, error}."""
+    from app.providers.image_flux import FluxProvider
+    from app.providers.image_krea import KreaProvider
+
+    return {"flux": FluxProvider().diagnose(), "krea": KreaProvider().diagnose()}
+
+
 @router.get("/api/providers/video/test")
 def video_connectivity_test():
     """Self-test the RunPod open-source image-to-video worker: attempts a real generation

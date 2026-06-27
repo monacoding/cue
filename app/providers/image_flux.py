@@ -14,10 +14,12 @@ from app.providers.base import ImageProvider, ImageResult
 
 class FluxProvider(ImageProvider):
     name = "flux-2"
+    endpoint = "fal-ai/flux-2-flex"
     max_reference_images = 4
 
     def __init__(self) -> None:
         self.fal_key = settings.fal_key
+        self.last_error: Optional[str] = None   # set by _call_fal for diagnostics
 
     @property
     def is_real(self) -> bool:
@@ -37,7 +39,11 @@ class FluxProvider(ImageProvider):
         # mock fallback: seed (seed strategy) or ref (reference strategy) anchors the look
         anchor = f"seed{seed}" if seed is not None else ("ref" if reference_images else "")
         data = _mockgen.make_image(prompt, aspect_ratio, anchor=anchor, label="FLUX·MOCK")
-        return ImageResult(image_bytes=data, provider=self.name + "·mock", meta={"mode": "mock"})
+        meta = {"mode": "mock"}
+        if self.is_real and self.last_error:        # keyed but the real call failed → surface why
+            meta["fell_back"] = True
+            meta["reason"] = self.last_error
+        return ImageResult(image_bytes=data, provider=self.name + "·mock", meta=meta)
 
     def edit_image(
         self,
@@ -49,27 +55,22 @@ class FluxProvider(ImageProvider):
         data = _mockgen.edit_image(image, instruction)
         return ImageResult(image_bytes=data, provider=self.name + "·mock", meta={"mode": "mock"})
 
-    # -- fal 호출 (httpx) ------------------------------------------------------
+    # -- fal 호출 ------------------------------------------------------------
     def _call_fal(self, prompt: str, aspect_ratio: str, seed: Optional[int] = None) -> Optional[bytes]:
-        try:
-            import httpx
+        from app.providers._fal import fal_image_call
 
-            payload = {"prompt": prompt, "image_size": _fal_size(aspect_ratio)}
-            if seed is not None:
-                payload["seed"] = seed  # lock the look across shots (seed strategy)
-            with httpx.Client(timeout=120) as client:
-                r = client.post(
-                    "https://fal.run/fal-ai/flux-2-flex",
-                    headers={"Authorization": f"Key {self.fal_key}"},
-                    json=payload,
-                )
-                r.raise_for_status()
-                url = r.json()["images"][0]["url"]
-                img = client.get(url)
-                img.raise_for_status()
-                return img.content
-        except Exception:
-            return None
+        payload = {"prompt": prompt, "image_size": _fal_size(aspect_ratio)}
+        if seed is not None:
+            payload["seed"] = seed  # lock the look across shots (seed strategy)
+        data, self.last_error = fal_image_call(self.endpoint, payload, self.fal_key)
+        return data
+
+    def diagnose(self) -> dict:
+        """Self-test the Flux fal connection — used by GET /api/providers/fal/test."""
+        from app.providers._fal import fal_diagnose
+
+        return fal_diagnose(self.name, self.endpoint, self.fal_key,
+                            {"prompt": "a small red square", "image_size": "square_hd"})
 
 
 def _fal_size(aspect_ratio: str) -> str:
