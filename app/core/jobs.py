@@ -158,6 +158,15 @@ class JobQueue:
     def get(self, job_id: str) -> Optional[Job]:
         return self._jobs.get(job_id)
 
+    def list_jobs(self, project_id: Optional[str] = None, limit: int = 20) -> list:
+        """Recent jobs (newest first), optionally scoped to a project — for a history panel.
+        Bounded by the queue's in-memory retention (see eviction)."""
+        with self._lock:
+            jobs = [j for j in self._jobs.values()
+                    if project_id is None or j.project_id == project_id]
+        jobs.sort(key=lambda j: j.created_at, reverse=True)
+        return [j.to_dict() for j in jobs[:max(1, limit)]]
+
     def active_job(self, project_id: str, kind: str) -> Optional[Job]:
         """The in-flight job for (project_id, kind), if any — lets a reloaded
         client reconnect to a running generation's progress."""

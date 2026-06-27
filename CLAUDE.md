@@ -35,6 +35,7 @@
 - **Phase 1 (MVP) — 완료**: 1~6 + 8단계(합성). `static_image`.
 - **Phase 2 — 완료**: 7단계 image-to-video(Seedance, 키 없으면 ffmpeg Ken Burns) + 컷별 텍스트 번인 + 8단계 xfade 조립 + 음악 베드 믹스 + 9단계 플랫폼 인코딩. `ugc_video`/`cinematic_video`.
   - 영상 생성은 **비동기 잡 큐**(`core/jobs.py`) + 폴링(`GET /api/jobs/{id}`) + 진행률 UI. 컷별 재생성 지원.
+  - **잡 히스토리(Phase 3c)**: `GET /api/jobs?project_id=` → 최근 잡 목록(`queue.list_jobs`), UI 상단 "≡ Jobs" 모달(종류·상태·진행률·실행 중 취소).
   - **잡 취소/interrupt(ComfyUI 차용)**: `POST /api/jobs/{id}/cancel` → 협조적 취소. 큐 대기 중이면 즉시, 실행 중이면 컷/클립 루프의 다음 체크포인트에서 중단(완료분은 보존). 긴 컷·영상 잡의 진행률 블록 "■ Stop" 버튼이 실제로 서버 잡을 멈춤. `queue.cancel/is_cancelled`, step5·step7 `should_cancel`.
 - **Phase 3 — 대부분**: 이미지 provider 자동 fallback, 멀티 플랫폼 export(9:16/1:1/4:5), **영상 모델 라우팅·음악 모델 라우팅(ElevenLabs/MiniMax)**. (업스케일 Lanczos 베이스라인+Topaz 라우팅, 비트싱크 구현 — 전 항목 완성)
   - **이미지 모델 옵션**: Qwen(RunPod) · Nano Banana · Flux(fal) · **Krea 2 Turbo(fal, `image_krea.py` — FAL_KEY 공용)** · Free(Pollinations). 키 없으면 각자 mock. per-image picker(Studio/Recipe)는 `/api/providers/image-models`에서 동적 생성 → 새 provider 추가 시 자동 노출.

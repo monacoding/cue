@@ -9,6 +9,12 @@ from app.deps import get_state_or_404
 router = APIRouter(tags=["jobs"])
 
 
+@router.get("/api/jobs")
+def list_jobs(project_id: str = "", limit: int = 20):
+    """Recent jobs (newest first), optionally scoped to a project — powers the history panel."""
+    return queue.list_jobs(project_id or None, max(1, min(100, limit)))
+
+
 @router.get("/api/jobs/{job_id}")
 def get_job(job_id: str):
     job = queue.get(job_id)

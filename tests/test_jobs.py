@@ -182,3 +182,18 @@ def _await(q: JobQueue, job_id: str, timeout: float = 3.0):
             return j
         time.sleep(0.02)
     raise AssertionError(f"job {job_id} did not finish")
+
+
+def test_list_jobs_scoped_and_recent():
+    """list_jobs returns recent jobs, scoped by project (job history panel)."""
+    q = JobQueue()
+    a = q.submit("shots", "pA", lambda job: "ok")
+    b = q.submit("video", "pA", lambda job: "ok")
+    c = q.submit("shots", "pB", lambda job: "ok")
+    for j in (a, b, c):
+        _await(q, j.id)
+    ids_pA = {r["id"] for r in q.list_jobs("pA")}
+    assert ids_pA == {a.id, b.id}
+    assert {r["id"] for r in q.list_jobs("pB")} == {c.id}
+    assert len(q.list_jobs()) >= 3                 # all projects
+    assert len(q.list_jobs(limit=1)) == 1          # limit honored

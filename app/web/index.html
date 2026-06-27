@@ -391,6 +391,9 @@
   .modal h3{font-family:'Space Grotesk';font-size:18px;padding:20px 24px 3px;display:flex;justify-content:space-between;align-items:center}
   .modal h3 .x{cursor:pointer;color:var(--faint);font-size:20px;font-weight:400;border:none;background:none}
   .modal .msub{color:var(--muted);font-size:12.5px;padding:0 24px 14px;border-bottom:1px solid var(--line-soft)}
+  .jrow{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+  .jrow .jk{color:#cfe0f2;font-weight:600}
+  .jrow .jt{color:var(--faint);font-variant-numeric:tabular-nums}
   .kgrid{padding:6px 24px 18px}
   .kgrp{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin:15px 0 4px}
   .krow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--line-soft)}
@@ -449,6 +452,7 @@
   <div class="hgroup">
     <button class="btn-ghost" id="dupBtn" onclick="App.duplicateCurrent()" style="display:none">Duplicate</button>
     <button class="btn-ghost" id="expBtn" onclick="App.exportProject()" style="display:none" title="Export this campaign as a portable .cue.json">⤓ Export</button>
+    <button class="btn-ghost" id="jobsBtn" onclick="App.openJobs()" style="display:none" title="Recent generation jobs">≡ Jobs</button>
     <button class="btn-ghost" onclick="App.importProject()" title="Import a .cue.json campaign">⤒ Import</button>
     <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     <button class="btn-ghost" id="delBtn" onclick="App.deleteCurrent()" style="display:none">Delete</button>
@@ -465,6 +469,7 @@
 <div class="ctxmenu" id="ctxmenu"></div>
 <div class="modal-bd" id="exportModal" onclick="if(event.target===this)App.hideExport()"><div class="modal" id="exportBody" role="dialog" aria-label="Export"></div></div>
 <div class="modal-bd" id="recipeModal" onclick="if(event.target===this)App.hideRecipe()"><div class="modal" id="recipeBody" role="dialog" aria-label="Generation recipe"></div></div>
+<div class="modal-bd" id="jobsModal" onclick="if(event.target===this)App.hideJobs()"><div class="modal" id="jobsBody" role="dialog" aria-label="Job history"></div></div>
 <div class="theater" id="theater">
   <button class="tclose" title="Close (Esc / F)" onclick="App.toggleTheater()">✕</button>
   <div class="tstage" id="theaterStage"></div>
@@ -545,7 +550,7 @@ const App={
     this.pid=pid;this._pm=false;document.body.classList.remove('projects');
     this._briefImages=null;        // reset attached images when switching projects
     this.state=await api(`/api/projects/${pid}`);
-    $("#switchWrap").style.display="";$("#projSelect").value=pid;$("#delBtn").style.display="";$("#dupBtn").style.display="";$("#expBtn").style.display="";$("#viewToggle").style.display="";$("#helpBtn").style.display="flex";
+    $("#switchWrap").style.display="";$("#projSelect").value=pid;$("#delBtn").style.display="";$("#dupBtn").style.display="";$("#expBtn").style.display="";$("#jobsBtn").style.display="";$("#viewToggle").style.display="";$("#helpBtn").style.display="flex";
     this.active=Math.max(1,this.state.current_step||1);
     this.renderRail();this.render();
   },
@@ -611,13 +616,33 @@ const App={
     };
     inp.click();
   },
+  async openJobs(){
+    const m=$("#jobsModal");if(!m||!this.pid)return;
+    let jobs=[];try{jobs=await api(`/api/jobs?project_id=${this.pid}&limit=25`);}catch(e){}
+    const badge=s=>({done:'ok',error:'fail',cancelled:'warn',running:'',queued:''}[s]||'');
+    const rows=jobs.length?jobs.map(j=>{
+      const running=(j.status==='running'||j.status==='queued');
+      const pct=Math.round((j.progress||0)*100);
+      return `<div class="jrow">
+        <span class="jk">${esc(j.kind)}</span>
+        <span class="vd ${badge(j.status)}">${j.status}${running?` ${pct}%`:''}</span>
+        <span class="jt">${esc((j.created_at||'').slice(11,19))}</span>
+        ${running?`<button class="btn-ghost btn-sm" onclick="App.cancelJob('${j.id}')">■ Stop</button>`:'<span></span>'}
+      </div>`;}).join(''):'<div class="empty" style="padding:18px">No jobs yet.</div>';
+    $("#jobsBody").innerHTML=`<h3>≡ Jobs <button class="x" onclick="App.hideJobs()" aria-label="Close">×</button></h3>
+      <div class="msub">Recent generation jobs for this project (newest first).</div>
+      <div style="padding:6px 18px 16px">${rows}</div>`;
+    m.classList.add('show');
+  },
+  hideJobs(){$("#jobsModal")?.classList.remove('show');},
+  async cancelJob(id){ try{await api(`/api/jobs/${id}/cancel`,"POST");toast("중지 요청됨");}catch(e){toast(e.message||'cancel failed',true);} this.openJobs(); },
   async deleteCurrent(){
     if(!this.pid||!confirm("Delete this project? This cannot be undone."))return;
     await api(`/api/projects/${this.pid}`,"DELETE");toast("Project deleted");
     this.pid=null;this.state=null;
     const list=await this.loadProjectList();
     if(list.length){await this.open(list[0].project_id);}
-    else{$("#delBtn").style.display="none";$("#dupBtn").style.display="none";$("#expBtn").style.display="none";this.renderWelcome();this.renderRail();}
+    else{$("#delBtn").style.display="none";$("#dupBtn").style.display="none";$("#expBtn").style.display="none";$("#jobsBtn").style.display="none";this.renderWelcome();this.renderRail();}
   },
 
   renderWelcome(){
@@ -1916,7 +1941,7 @@ async function withBtn(ev,fn){
 // Keyboard step navigation (←/→) — ignored while typing in a field
 document.addEventListener("mousedown",(e)=>{if(!e.target.closest(".ctxmenu"))App.hideCtx&&App.hideCtx();});
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape"){App.hideHelp();App.hideCtx&&App.hideCtx();App.hideExport&&App.hideExport();App.hideRecipe&&App.hideRecipe();const th=$("#theater");if(th&&th.classList.contains('show'))App.toggleTheater();}
+  if(e.key==="Escape"){App.hideHelp();App.hideCtx&&App.hideCtx();App.hideExport&&App.hideExport();App.hideRecipe&&App.hideRecipe();App.hideJobs&&App.hideJobs();const th=$("#theater");if(th&&th.classList.contains('show'))App.toggleTheater();}
   // Undo / redo (Studio) — allow with ⌘/Ctrl, even when other keys are gated below
   if((e.metaKey||e.ctrlKey)&&(e.key==="z"||e.key==="Z")&&App._view==="studio"){
     const tg=e.target.tagName||"";if(tg==="INPUT"||tg==="TEXTAREA")return;
