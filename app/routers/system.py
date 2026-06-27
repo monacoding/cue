@@ -18,12 +18,12 @@ def _claude_cli_active() -> bool:
 
 @router.get("/api/providers/qwen/test")
 def qwen_connectivity_test():
-    """Self-test the RunPod Qwen connection: attempts a real generation and reports
+    """Self-test the fal Qwen connection: attempts a real generation and reports
     success or the failure reason (HTTP status / parse / exception). Lets the user
-    verify their worker the moment they add keys."""
-    from app.providers.image_qwen_runpod import QwenRunPodProvider
+    verify the model + any trained LoRA the moment they add the FAL_KEY."""
+    from app.providers.registry import _qwen_image
 
-    return QwenRunPodProvider().diagnose()
+    return _qwen_image().diagnose()
 
 
 @router.get("/api/providers/llm/test")

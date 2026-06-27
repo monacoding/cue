@@ -58,6 +58,13 @@ class Settings:
     replicate_token: str = os.getenv("REPLICATE_API_TOKEN", "")
     modelark_key: str = os.getenv("MODELARK_API_KEY", "")
 
+    # fal-hosted Qwen-Image (fal-ai/qwen-image-2512/lora) — the preferred Qwen path (pay-per-use,
+    # zero idle cost). Optional trained LoRA: a .safetensors URL + trigger word (style phrase).
+    fal_qwen_lora_url: str = os.getenv("FAL_QWEN_LORA_URL", "")
+    fal_qwen_lora_scale: float = float(os.getenv("FAL_QWEN_LORA_SCALE", "1.0") or "1.0")
+    # appended to every fal-Qwen prompt — the LoRA trigger word / style phrase (e.g. "myeongdong_street").
+    fal_qwen_style: str = os.getenv("FAL_QWEN_STYLE", "")
+
     # RunPod-hosted Qwen image model (serverless endpoint id, or a full URL for a custom pod)
     runpod_api_key: str = os.getenv("RUNPOD_API_KEY", "")
     runpod_qwen_endpoint: str = os.getenv("RUNPOD_QWEN_ENDPOINT", "")

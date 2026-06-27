@@ -21,7 +21,7 @@ from app.providers.image_flux import FluxProvider
 from app.providers.image_krea import KreaProvider
 from app.providers.image_nanobanana import NanoBananaProvider
 from app.providers.image_pollinations import PollinationsProvider
-from app.providers.image_qwen_runpod import QwenRunPodProvider
+from app.providers.image_qwen_fal import QwenFalProvider
 from app.providers.llm_claude import ClaudeProvider
 from app.providers.llm_claude_cli import ClaudeCLIProvider
 from app.providers.video_kling import KlingProvider
@@ -43,7 +43,7 @@ def get_llm() -> LLMProvider:
 
 @lru_cache(maxsize=1)
 def _qwen_image() -> ImageProvider:
-    return QwenRunPodProvider()
+    return QwenFalProvider()
 
 
 @lru_cache(maxsize=1)
@@ -99,7 +99,7 @@ _IMAGE_PROVIDERS_BY_KEY = {
 }
 IMAGE_MODEL_LABELS = {
     "auto": "Auto (best available)",
-    "qwen": "Qwen (RunPod)",
+    "qwen": "Qwen (fal)",
     "nano_banana": "Nano Banana",
     "flux": "Flux",
     "krea": "Krea 2 (Turbo · fal)",

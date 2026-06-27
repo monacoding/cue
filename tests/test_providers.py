@@ -1059,16 +1059,15 @@ def test_qwen_runpod_mock_when_not_configured():
 def test_registry_prefers_qwen_when_configured(monkeypatch):
     from app.config import settings
     from app.providers import registry
-    from app.providers.image_qwen_runpod import QwenRunPodProvider
+    from app.providers.image_qwen_fal import QwenFalProvider
 
-    monkeypatch.setattr(settings, "runpod_api_key", "k")
-    monkeypatch.setattr(settings, "runpod_qwen_endpoint", "ep")
+    monkeypatch.setattr(settings, "fal_key", "k")
     monkeypatch.setattr(settings, "force_mock", False)
     registry._qwen_image.cache_clear()
     try:
         chain = registry.image_chain()
-        assert isinstance(chain[0], QwenRunPodProvider)        # Qwen first when configured
-        assert isinstance(registry.get_image_provider(), QwenRunPodProvider)
+        assert isinstance(chain[0], QwenFalProvider)           # Qwen first when configured
+        assert isinstance(registry.get_image_provider(), QwenFalProvider)
     finally:
         registry._qwen_image.cache_clear()
 

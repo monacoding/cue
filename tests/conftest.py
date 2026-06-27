@@ -13,19 +13,39 @@ from app.config import settings
 from app.providers import registry
 
 
+# lru_cached provider factories — their instances snapshot settings (e.g. fal_key) at
+# construction, so a test that monkeypatches a key and builds the chain would leak a "real"
+# instance into later tests. Clear them around every test to keep the suite order-independent.
+_IMAGE_FACTORIES = (
+    "_qwen_image", "_primary_image", "_fallback_image", "_krea_image", "_free_image",
+)
+
+
+def _clear_image_caches():
+    for name in _IMAGE_FACTORIES:
+        getattr(registry, name).cache_clear()
+
+
 @pytest.fixture(autouse=True)
 def _hermetic_llm(monkeypatch):
     # tests must be hermetic — never shell out to the real `claude` CLI nor hit the free
     # Pollinations image service. Both fall back to the deterministic mock.
     monkeypatch.setattr(settings, "claude_cli_enabled", False)
     monkeypatch.setattr(settings, "free_images", False)
+    # blank network keys so a developer's real .env (FAL_KEY etc.) can't make tests hit live
+    # APIs — that spends money and hangs on polling endpoints. Tests that exercise a real path
+    # set the key themselves (via monkeypatch or prov.fal_key) and mock the HTTP client.
+    for _k in ("fal_key", "runpod_api_key", "runpod_qwen_endpoint", "runpod_video_endpoint",
+               "gemini_api_key", "elevenlabs_api_key", "anthropic_api_key"):
+        if hasattr(settings, _k):
+            monkeypatch.setattr(settings, _k, "")
     # snapshot force_mock so a test/script that flips it globally can't leak into the next test
     monkeypatch.setattr(settings, "force_mock", settings.force_mock)
     registry.get_llm.cache_clear()
-    registry._free_image.cache_clear()
+    _clear_image_caches()
     yield
     registry.get_llm.cache_clear()
-    registry._free_image.cache_clear()
+    _clear_image_caches()
 
 
 @pytest.fixture
