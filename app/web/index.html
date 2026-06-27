@@ -448,6 +448,9 @@
   <div class="spacer"></div>
   <div class="hgroup">
     <button class="btn-ghost" id="dupBtn" onclick="App.duplicateCurrent()" style="display:none">Duplicate</button>
+    <button class="btn-ghost" id="expBtn" onclick="App.exportProject()" style="display:none" title="Export this campaign as a portable .cue.json">⤓ Export</button>
+    <button class="btn-ghost" onclick="App.importProject()" title="Import a .cue.json campaign">⤒ Import</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     <button class="btn-ghost" id="delBtn" onclick="App.deleteCurrent()" style="display:none">Delete</button>
     <button class="btn-primary" onclick="App.newProject()">+ New Project</button>
   </div>
@@ -542,7 +545,7 @@ const App={
     this.pid=pid;this._pm=false;document.body.classList.remove('projects');
     this._briefImages=null;        // reset attached images when switching projects
     this.state=await api(`/api/projects/${pid}`);
-    $("#switchWrap").style.display="";$("#projSelect").value=pid;$("#delBtn").style.display="";$("#dupBtn").style.display="";$("#viewToggle").style.display="";$("#helpBtn").style.display="flex";
+    $("#switchWrap").style.display="";$("#projSelect").value=pid;$("#delBtn").style.display="";$("#dupBtn").style.display="";$("#expBtn").style.display="";$("#viewToggle").style.display="";$("#helpBtn").style.display="flex";
     this.active=Math.max(1,this.state.current_step||1);
     this.renderRail();this.render();
   },
@@ -593,13 +596,28 @@ const App={
       const r=await api(`/api/projects/${this.pid}/duplicate`,"POST");
       toast("Project duplicated");this.pid=r.project_id;await this.loadProjectList();await this.open(r.project_id);});
   },
+  exportProject(){ if(!this.pid)return; window.open(`${API}/api/projects/${this.pid}/export`,"_blank"); },
+  importProject(){
+    const inp=$("#importFile"); if(!inp)return;
+    inp.value="";
+    inp.onchange=async()=>{
+      const f=inp.files&&inp.files[0]; if(!f)return;
+      try{
+        const data=JSON.parse(await f.text());
+        const r=await api(`/api/projects/import`,"POST",data);
+        toast("Campaign imported — regenerate the images");
+        this.pid=r.project_id;await this.loadProjectList();await this.open(r.project_id);
+      }catch(e){ toast("Import failed: "+(e.message||e),true); }
+    };
+    inp.click();
+  },
   async deleteCurrent(){
     if(!this.pid||!confirm("Delete this project? This cannot be undone."))return;
     await api(`/api/projects/${this.pid}`,"DELETE");toast("Project deleted");
     this.pid=null;this.state=null;
     const list=await this.loadProjectList();
     if(list.length){await this.open(list[0].project_id);}
-    else{$("#delBtn").style.display="none";$("#dupBtn").style.display="none";this.renderWelcome();this.renderRail();}
+    else{$("#delBtn").style.display="none";$("#dupBtn").style.display="none";$("#expBtn").style.display="none";this.renderWelcome();this.renderRail();}
   },
 
   renderWelcome(){

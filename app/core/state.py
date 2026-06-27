@@ -189,6 +189,41 @@ def duplicate_project(src_id: str) -> Optional[ProjectState]:
     return save(st)
 
 
+def import_project(data: dict) -> Optional[ProjectState]:
+    """Create a new project from an exported ProjectState JSON (a portable campaign 'workflow').
+
+    Keeps the reproducible plan — brief/spec/storyboard/concepts — and DROPS per-instance
+    generated assets (hero/shot images, videos, outputs), since those are local files that
+    don't travel; the imported project lands at the storyboard stage, ready to regenerate.
+    Returns None if the payload isn't a valid ProjectState.
+    """
+    try:
+        src = ProjectState.model_validate(data)
+    except Exception:
+        return None
+    new_id = uuid.uuid4().hex[:12]
+    pdir = project_dir(new_id)
+    pdir.mkdir(parents=True, exist_ok=True)
+    (pdir / "versions").mkdir(exist_ok=True)
+    now = _now()
+    if src.adspec is not None:
+        src.adspec.project_id = new_id          # re-key the spec to the new project
+    landing = PipelineStep.storyboard if src.storyboard else PipelineStep.brief
+    st = ProjectState(
+        project_id=new_id,
+        title=(src.title or "Imported") + " (imported)",
+        format=src.format,
+        current_step=landing,
+        adspec=src.adspec,
+        storyboard=src.storyboard,
+        concepts=src.concepts,
+        selected_concept_id=src.selected_concept_id,
+        created_at=now,
+        updated_at=now,
+    )
+    return save(st)
+
+
 # ---------------------------------------------------------------------------
 # 버전 (사람 개입 스냅샷)
 # ---------------------------------------------------------------------------

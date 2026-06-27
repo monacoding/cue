@@ -1224,3 +1224,36 @@ def test_proof_led_cta_when_generic(pid):
     ])
     state_store.save(st)
     assert _default_cta(state_store.load(pid)) == "Get the 40-hour battery today"
+
+
+def test_export_import_roundtrip(pid):
+    """Export a project to portable JSON and re-import it as a new project (Phase 3a)."""
+    from fastapi.testclient import TestClient
+
+    from app.core.schemas import SpecRequest
+    from app.main import app
+
+    step1_brief.run(pid, product_text="Aura earbuds. 40-hour battery.")
+    step2_spec.run(pid, SpecRequest(duration_sec=9))
+    step3_storyboard.run(pid)
+    client = TestClient(app)
+
+    exp = client.get(f"/api/projects/{pid}/export")
+    assert exp.status_code == 200
+    assert "attachment" in exp.headers.get("content-disposition", "")
+    data = exp.json()
+
+    imp = client.post("/api/projects/import", json=data)
+    assert imp.status_code == 200
+    new_id = imp.json()["project_id"]
+    assert new_id != pid
+    new_st = state_store.load(new_id)
+    try:
+        src_shots = len(state_store.load(pid).storyboard.shots)
+        assert new_st.storyboard and len(new_st.storyboard.shots) == src_shots
+        assert new_st.adspec.project_id == new_id           # re-keyed to the new project
+        assert new_st.hero_image is None                    # assets not bundled (regenerable)
+    finally:
+        state_store.delete_project(new_id)
+
+    assert client.post("/api/projects/import", json={"garbage": 1}).status_code == 400

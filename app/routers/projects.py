@@ -87,3 +87,25 @@ def duplicate_project(project_id: str):
     if st is None:
         raise HTTPException(404, "project not found")
     return {"project_id": st.project_id, "title": st.title}
+
+
+@router.post("/api/projects/import")
+def import_project(data: dict):
+    """Import a project from an exported '.cue.json' (portable campaign plan). Restores
+    brief/spec/storyboard/concepts into a new project (assets are regenerable, not bundled)."""
+    st = state_store.import_project(data or {})
+    if st is None:
+        raise HTTPException(400, "invalid project export JSON")
+    return {"project_id": st.project_id, "title": st.title}
+
+
+@router.get("/api/projects/{project_id}/export")
+def export_project(project_id: str):
+    """Download the project as a portable JSON 'workflow' (spec/storyboard/concepts) —
+    share or move a campaign across instances; re-import regenerates the assets."""
+    st = get_state_or_404(project_id)
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", st.title)[:40] or "cue_project"
+    return Response(
+        st.model_dump_json(indent=2), media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{safe}.cue.json"'},
+    )
